@@ -1,0 +1,14 @@
+﻿Project Name: AURA – Advancing Urban Resilience through AI-Enhanced Hurricane Risk Modeling
+Goal: Improve FEMA’s National Risk Index by validating and extending it with machine learning to better predict hurricane impacts in Gulf Coast communities.
+Core Tasks:
+* Replicate FEMA’s scoring methodology for validation.
+
+* Acquire and integrate datasets: FEMA National Risk Index, FEMA Individual Assistance (OpenFEMA API), NOAA HURDAT2 hurricane tracks, ACS demographic data, USGS elevation/subsidence, CDC Social Vulnerability Index, infrastructure datasets.
+
+* Develop ML models (Random Forest, Gradient Boosting, Ensemble methods) for predicting tract-level outcomes (assistance amounts, power outages, recovery time).
+
+* Use unsupervised learning (clustering, PCA) to discover new neighborhood risk patterns.
+
+* Compare FEMA vs ML approaches, with SHAP explanations for interpretability.
+
+Deliverables: Reproducible Python scripts and notebooks, ML pipeline, interactive risk visualization dashboard, and research paper with policy recommendations.
