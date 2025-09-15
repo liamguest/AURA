@@ -32,3 +32,29 @@ Upstream fields (interim):
 
 Change log
 - 2025‑09‑08: Initial ACS dictionary added.
+
+## FEMA Housing Registrants (IA) — subset and aggregation
+- Source (raw subset): data/raw/fema_housing_subset.json
+- Clean (interim): data/interim/fema_housing_subset_clean.csv
+- Aggregated (processed): data/processed/fema_housing_by_tract.csv
+
+Processed columns (by tract):
+- tract_geoid: 11‑digit census tract identifier (string). From censusBlockId.
+- applications: Count of IA records associated with the tract.
+- ppfvl_sum: Sum of personal property funding verified loss (ppfvl).
+- ppfvl_mean: Mean ppfvl.
+- tsa_eligible_rate: Share of records eligible for TSA (transitional sheltering assistance).
+- owner_rate / renter_rate: Share of Owner vs Renter in ownRent.
+
+Notes:
+- The subset is paged from the v1 Housing Registrants endpoint and may be filtered by disasterNumber.
+- disaster filters used (example): Harvey=4332, Laura=4559, Ida=4611, Ian=4673 (adjust as needed).
+
+## CDC Social Vulnerability Index (SVI)
+- Source (raw): data/raw/svi/*.csv (drop state CSVs here)
+- Combined (interim): data/interim/svi_combined.csv
+- Simple (processed): data/processed/svi_simple.csv
+
+Keys/columns:
+- tract_geoid: Derived from an SVI GEOID/FIPS column (normalized to 11 digits).
+- Additional SVI variables depend on the release; we’ll select/rename in a later pass.
