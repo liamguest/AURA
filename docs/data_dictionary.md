@@ -51,10 +51,28 @@ Notes:
 - disaster filters used (example): Harvey=4332, Laura=4559, Ida=4611, Ian=4673 (adjust as needed).
 
 ## CDC Social Vulnerability Index (SVI)
-- Source (raw): data/raw/svi/*.csv (drop state CSVs here)
-- Combined (interim): data/interim/svi_combined.csv
-- Simple (processed): data/processed/svi_simple.csv
+- Source (raw): `data/raw/svi/*.csv` (e.g., `SVI_2022_US.csv` placed under `data/raw/svi/`)
+- Combined (interim, filtered to Gulf states): `data/interim/svi_combined.csv`
+- Simple (processed, filtered): `data/processed/svi_simple.csv`
+- States kept: Alabama (AL), Louisiana (LA), Florida (FL), Texas (TX), Mississippi (MS)
 
-Keys/columns:
-- tract_geoid: Derived from an SVI GEOID/FIPS column (normalized to 11 digits).
-- Additional SVI variables depend on the release; we’ll select/rename in a later pass.
+Key columns (present in simple and/or combined files):
+- tract_geoid: 11‑digit census tract identifier (string). Derived from `FIPS`/`GEOID` in source CSV.
+- ST / ST_ABBR: State code or abbreviation (e.g., AL, LA, FL, TX, MS).
+- STATE: State name.
+- STCNTY: State+county FIPS.
+- COUNTY: County name.
+- FIPS: Full geographic identifier from SVI file (may be tract‑level).
+- LOCATION: Human‑readable place label.
+- AREA_SQMI: Area in square miles.
+- E_TOTPOP / M_TOTPOP: Estimated total population and margin of error.
+- E_HU / M_HU: Estimated housing units and margin of error.
+- E_HH / M_HH: Estimated households and margin of error.
+- E_POV150 / M_POV150: Population at or below 150% of poverty and margin.
+- E_UNEMP / M_UNEMP: Unemployed civilian population (16+) and margin.
+- E_HBURD / M_HBURD: Housing cost burdened households and margin.
+- RPL_THEME1..RPL_THEME4: Thematic SVI percentile rankings (socioeconomic; household composition & disability; minority status & language; housing type & transportation).
+- RPL_THEMES: Overall SVI percentile ranking.
+
+Notes:
+- The interim file retains all columns post‑filter; `svi_simple.csv` is a starter subset for faster exploration. You can add more SVI variables by editing the keep‑list in `notebooks/data_cleaning/40_svi_ingest.ipynb` and re‑running.
