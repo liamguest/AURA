@@ -1,0 +1,24 @@
+# Conda environment files
+.env
+*.env
+*.yml
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# VS Code settings
+.vscode/
+
+# MacOS metadata
+.DS_Store
+
+# Data
+data/raw/
+
+
+
+*.gdoc
