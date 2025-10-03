@@ -1,0 +1,12 @@
+# Core analytics stack for AURA tract_storm pipeline
+numpy>=1.26
+pandas>=2.2
+pyarrow>=14.0
+scikit-learn>=1.4
+requests>=2.31
+tqdm>=4.66
+geopandas>=1.1
+pyogrio>=0.11
+# Optional: enable explainability & visualization notebooks
+shap>=0.45
+plotly>=5.18

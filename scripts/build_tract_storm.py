@@ -71,6 +71,8 @@ HAZARD_COLUMNS = [
     "pct_floodplain",
 ]
 
+COVERAGE_COLUMNS = ["tract_geoid", "disasterNumber"]
+
 
 @dataclass
 class BuildConfig:
@@ -80,6 +82,8 @@ class BuildConfig:
     acs_path: Path = PROCESSED_DIR / "acs_2022_tx_la_ms_al_fl_clean.csv"
     fema_path: Path = PROCESSED_DIR / "fema_housing_by_tract_disaster.csv"
     hazard_path: Path = PROCESSED_DIR / "hazard_features_by_tract.csv"
+    fema_declared_path: Path = PROCESSED_DIR / "tract_storm_fema_coverage.csv"
+    noaa_coverage_path: Path = PROCESSED_DIR / "tract_storm_noaa_coverage.csv"
     output_csv: Path = PROCESSED_DIR / "tract_storm_features.csv"
     output_parquet: Path = PROCESSED_DIR / "tract_storm_features.parquet"
 
@@ -155,6 +159,31 @@ def load_hazard_features(path: Path) -> pd.DataFrame:
     return hazard[["tract_geoid", "disasterNumber", *HAZARD_COLUMNS]]
 
 
+def load_coverage(path: Path, indicator: str) -> pd.DataFrame:
+    if path.exists():
+        coverage = pd.read_csv(
+            path,
+            dtype={"tract_geoid": "string", "disasterNumber": "Int64"},
+        )
+        missing_cols = [col for col in COVERAGE_COLUMNS if col not in coverage.columns]
+        if missing_cols:
+            raise ValueError(
+                f"Coverage file {path} missing required columns: {', '.join(missing_cols)}"
+            )
+        coverage = coverage[COVERAGE_COLUMNS].drop_duplicates()
+        coverage[indicator] = 1
+    else:
+        coverage = pd.DataFrame(
+            {
+                "tract_geoid": pd.Series(dtype="string"),
+                "disasterNumber": pd.Series(dtype="Int64"),
+                indicator: pd.Series(dtype="int8"),
+            }
+        )
+    coverage[indicator] = coverage[indicator].astype("int8")
+    return coverage
+
+
 def attach_population(df: pd.DataFrame) -> pd.DataFrame:
     df["population_for_pc"] = df["acs_total_population"].fillna(df["svi_total_population"])
     df["fema_claims_pc"] = df.apply(
@@ -182,14 +211,26 @@ def build_dataset(config: BuildConfig) -> pd.DataFrame:
     svi = load_svi_features(config.svi_path)
     acs = load_acs_features(config.acs_path)
     hazard = load_hazard_features(config.hazard_path)
+    fema_coverage = load_coverage(config.fema_declared_path, "in_fema_decl")
+    noaa_coverage = load_coverage(config.noaa_coverage_path, "in_noaa_exposure")
 
     df = fema.merge(svi, on="tract_geoid", how="left")
     df = df.merge(acs, on="tract_geoid", how="left")
     df = df.merge(hazard, on=["tract_geoid", "disasterNumber"], how="left")
+    df = df.merge(fema_coverage, on=["tract_geoid", "disasterNumber"], how="left")
+    df = df.merge(noaa_coverage, on=["tract_geoid", "disasterNumber"], how="left")
+
+    df["in_fema_decl"] = df["in_fema_decl"].fillna(0).astype("int8")
+    df["in_noaa_exposure"] = df["in_noaa_exposure"].fillna(0).astype("int8")
 
     df = mark_declaration(df)
     df = attach_population(df)
     df = compute_transforms(df)
+
+    df["coverage_label"] = "none"
+    df.loc[(df["in_fema_decl"] == 1) & (df["in_noaa_exposure"] == 1), "coverage_label"] = "both"
+    df.loc[(df["in_fema_decl"] == 1) & (df["in_noaa_exposure"] == 0), "coverage_label"] = "fema_only"
+    df.loc[(df["in_fema_decl"] == 0) & (df["in_noaa_exposure"] == 1), "coverage_label"] = "noaa_only"
 
     outcome_cols = [
         "tract_geoid",
@@ -233,8 +274,17 @@ def build_dataset(config: BuildConfig) -> pd.DataFrame:
         "state_fips",
         "area_sq_mi",
     ]
+    coverage_cols = ["in_fema_decl", "in_noaa_exposure", "coverage_label"]
 
-    ordered_cols = outcome_cols + policy_cols + demo_cols + housing_cols + hazard_cols + geography_cols
+    ordered_cols = (
+        outcome_cols
+        + policy_cols
+        + demo_cols
+        + housing_cols
+        + hazard_cols
+        + coverage_cols
+        + geography_cols
+    )
     existing_cols = [col for col in ordered_cols if col in df.columns]
     df = df[existing_cols]
     return df
@@ -256,6 +306,18 @@ def parse_args() -> BuildConfig:
     parser.add_argument("--acs", dest="acs_path", type=Path, default=BuildConfig.acs_path)
     parser.add_argument("--fema", dest="fema_path", type=Path, default=BuildConfig.fema_path)
     parser.add_argument("--hazard", dest="hazard_path", type=Path, default=BuildConfig.hazard_path)
+    parser.add_argument(
+        "--fema-coverage",
+        dest="fema_declared_path",
+        type=Path,
+        default=BuildConfig.fema_declared_path,
+    )
+    parser.add_argument(
+        "--noaa-coverage",
+        dest="noaa_coverage_path",
+        type=Path,
+        default=BuildConfig.noaa_coverage_path,
+    )
     parser.add_argument("--out-csv", dest="output_csv", type=Path, default=BuildConfig.output_csv)
     parser.add_argument("--out-parquet", dest="output_parquet", type=Path, default=BuildConfig.output_parquet)
     args = parser.parse_args()
@@ -264,6 +326,8 @@ def parse_args() -> BuildConfig:
         acs_path=args.acs_path,
         fema_path=args.fema_path,
         hazard_path=args.hazard_path,
+        fema_declared_path=args.fema_declared_path,
+        noaa_coverage_path=args.noaa_coverage_path,
         output_csv=args.output_csv,
         output_parquet=args.output_parquet,
     )
