@@ -50,6 +50,7 @@ EXCLUDE_COLUMNS = {
     "county_name",
     "acs_state_fips",
     "state_fips",
+    "coverage_label",
 }
 
 
@@ -78,7 +79,7 @@ def safe_mape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 METRIC_FUNCS = {
     "r2": r2_score,
-    "rmse": lambda y_true, y_pred: mean_squared_error(y_true, y_pred, squared=False),
+    "rmse": lambda y_true, y_pred: float(np.sqrt(mean_squared_error(y_true, y_pred))),
     "mae": mean_absolute_error,
     "mape": safe_mape,
     "explained_variance": explained_variance_score,

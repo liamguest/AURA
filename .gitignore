@@ -26,3 +26,5 @@ data/processed/*.parquet
 
 # Virtual environments
 .venv/
+data/interim/*.csv.gz
+data/raw/*.json.gz
